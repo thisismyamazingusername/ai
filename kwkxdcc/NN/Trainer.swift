@@ -38,7 +38,7 @@ class Trainer {
 
         var error = lossFunctionDerivative(activations, target)
 
-        for (index, layer) in layers.reversed().enumerated() {
+        for (_, layer) in layers.reversed().enumerated() {
             error = layer.backward(error: error, learningRate: learningRate)
         }
 

@@ -8,14 +8,15 @@
 import Foundation
 import UIKit
 import Accelerate
+import Combine
 
-class NeuralNetwork {
+class NeuralNetwork: ObservableObject {
     var layers: [Layer]
 
     init() {
         layers = [
-            Layer(numNeurons: 16, inputSize: 100, activationFunc: sigmoid),
-            Layer(numNeurons: 6, inputSize: 16, activationFunc: sigmoid)
+            Layer(numNeurons: 32, inputSize: 200, activationFunc: sigmoid),
+            Layer(numNeurons: 6, inputSize: 32, activationFunc: sigmoid)
         ]
     }
 
@@ -29,11 +30,17 @@ class NeuralNetwork {
     func teach(input: [CGPoint], label: String) {
             // flattened/converted -> double??
             var flattenedInput = input.flatMap { [$0.x, $0.y] }.toDouble()
-            
-            while flattenedInput.count < 100 {
-                // 0 padding
+
+            // pad w zeros if < 200 elms
+            while flattenedInput.count < 200 {
                 flattenedInput.append(0)
             }
+            
+            // shorten if > 200 elms
+            if flattenedInput.count > 200 {
+                flattenedInput = Array(flattenedInput.prefix(200))
+            }
+        
             
             var activations = [flattenedInput]
             var outputs = flattenedInput
@@ -51,6 +58,22 @@ class NeuralNetwork {
                 error = layer.backward(error: error, learningRate: 0.01)
             }
         }
+    
+    func canvasToGrid(points: [CGPoint], width: CGFloat, height: CGFloat) -> [[Bool]] {
+        let gridSize = 10  // 10x10 grid
+        var grid: [[Bool]] = Array(repeating: Array(repeating: false, count: gridSize), count: gridSize)
+
+        for point in points {
+            let rowIndex = Int(point.y / (height / CGFloat(gridSize)))
+            let colIndex = Int(point.x / (width / CGFloat(gridSize)))
+
+            if rowIndex >= 0 && rowIndex < gridSize && colIndex >= 0 && colIndex < gridSize {
+                grid[rowIndex][colIndex] = true
+            }
+        }
+
+        return grid
+    }
 
 }
 

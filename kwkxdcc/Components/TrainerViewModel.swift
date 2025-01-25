@@ -22,8 +22,7 @@
 //            zip(predicted, target).map { 2 * ($0 - $1) }
 //        }
 //    )
-//    
-//    let emojis = ["😀", "🎉", "❤️", "👍"] // Example emoji list
+
 //    private let gridSize = 80
 //
 //    init() {
@@ -62,14 +61,5 @@
 //        print("Training complete. Loss: \(loss)")
 //    }
 //
-//    func nextEmoji() {
-//        currentEmojiIndex = (currentEmojiIndex + 1) % emojis.count
-//        resetCanvas()
-//    }
-//
-//    func resetCanvas() {
-//        pixelGrid = Array(repeating: Array(repeating: false, count: gridSize), count: gridSize)
-//        drawnPoints = []
-//    }
 //}
 //

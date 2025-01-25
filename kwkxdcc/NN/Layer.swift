@@ -28,16 +28,6 @@ class Layer {
     }
 
     func backward(error: [Double], learningRate: Double) -> [Double] {
-        guard error.count == biases.count else {
-            fatalError("Mismatch: error.count (\(error.count)) != biases.count (\(biases.count))")
-        }
-        guard weights.count == error.count else {
-            fatalError("Mismatch: weights.count (\(weights.count)) != error.count (\(error.count))")
-        }
-        guard weights.allSatisfy({ $0.count == inputs.count }) else {
-            fatalError("Mismatch: weights[i].count != inputs.count (\(inputs.count))")
-        }
-        
         let output = activationFunc(weights.map { zip($0, inputs).map(*).reduce(0, +) })
         let delta = zip(error, activationFuncDerivative(output)).map(*)
         
@@ -45,20 +35,25 @@ class Layer {
         print("weights[i].count: \(weights[0].count)")
         print("delta.count: \(delta.count)")
         print("inputs.count: \(inputs.count)")
-        
+
         for i in 0..<weights.count {
             for j in 0..<weights[i].count {
                 weights[i][j] -= learningRate * delta[i] * inputs[j]
             }
         }
         
-        // bias updating needs delta?? did i do this right?
-        biases = zip(biases, delta).map { $0 - learningRate * $1 }
-        
-        // return for bprop
-        return weights.map { neuronWeights in
-            zip(neuronWeights, delta).map(*).reduce(0, +)
+        for i in 0..<biases.count {
+            biases[i] -= learningRate * delta[i]
         }
+        
+        var prevLayerError = [Double](repeating: 0, count: weights[0].count)
+        for i in 0..<weights[0].count {
+            for j in 0..<weights.count {
+                prevLayerError[i] += weights[j][i] * delta[j]
+            }
+        }
+        
+        return prevLayerError
     }
 
 }

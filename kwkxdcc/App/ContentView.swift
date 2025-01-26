@@ -21,7 +21,8 @@ struct ContentView: View {
     @State private var currentEmojiIndex: Int = 0
     @State private var neuralNetwork = NeuralNetwork()
     @State private var trainedCount: Int = 0
-    @State private var drawing: [CGPoint] = []
+    @State private var drawing: [[CGPoint]] = []
+    @State private var lastDrawingTime: Date = Date()
     @State private var showThankYou: Bool = false
     @State private var predictionResult: String?
     @State private var audioPlayer: AVAudioPlayer?
@@ -50,10 +51,13 @@ struct ContentView: View {
                 DrawingCanvasView(drawing: $drawing, currentEmojiIndex: $currentEmojiIndex, model: neuralNetwork)
                     .padding()
                     .onChange(of: drawing) { oldValue, newValue in
+                        lastDrawingTime = Date()
                         if mode == .play {
                             timer?.invalidate()
-                            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
-                                predict()
+                            timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+                                if Date().timeIntervalSince(lastDrawingTime) >= 5.0 {
+                                    predict()
+                                }
                             }
                         }
                     }
@@ -78,9 +82,10 @@ struct ContentView: View {
     private func teachNext() {
         guard let emojiID = currentEmoji?.id else { return }
 
-        processDrawing(points: drawing, canvasWidth: UIScreen.main.bounds.width, canvasHeight: UIScreen.main.bounds.height)
+        let flattenedDrawing = drawing.flatMap { $0 }
+        processDrawing(points: flattenedDrawing, canvasWidth: UIScreen.main.bounds.width, canvasHeight: UIScreen.main.bounds.height)
         
-        neuralNetwork.teach(input: drawing, label: emojiID)
+        neuralNetwork.teach(input: flattenedDrawing, label: emojiID)
         print("Teaching with emoji: \(emojiID)")
         
         trainedCount += 1
@@ -96,11 +101,12 @@ struct ContentView: View {
         drawing = []
     }
 
+
     private func predict() {
-        let (prediction, confidence) = neuralNetwork.predict(input: drawing)
+        let flattenedDrawing = drawing.flatMap { $0 }
+        let (prediction, confidence) = neuralNetwork.predict(input: flattenedDrawing)
         
         if confidence > 0.2 {
-            //   ADJUST THIS to 0.5 hmm brb
             predictionResult = EmojiData.all.first(where: { $0.id == prediction })?.symbol ?? "🫠"
             playSound(name: "recognized")
         } else {

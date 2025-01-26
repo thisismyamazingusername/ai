@@ -9,14 +9,14 @@ import Foundation
 import SwiftUI
 
 struct DrawingCanvasView: UIViewRepresentable {
-    @Binding var drawing: [CGPoint]
+    @Binding var drawing: [[CGPoint]]
     @Binding var currentEmojiIndex: Int
     @ObservedObject var model: NeuralNetwork
     
     func makeUIView(context: Context) -> DrawingCanvas {
         let canvas = DrawingCanvas()
-        canvas.onDrawingUpdate = { points in
-            drawing = points
+        canvas.onDrawingEnd = { stroke in
+            drawing.append(stroke)
         }
         return canvas
     }
@@ -28,4 +28,3 @@ struct DrawingCanvasView: UIViewRepresentable {
         uiView.setNeedsDisplay()
     }
 }
-

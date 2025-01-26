@@ -34,8 +34,44 @@ struct ContentView: View {
     var body: some View {
         VStack {
             if showThankYou {
-                Text("Thank you for playing!")
-            } else {
+                VStack {
+                    Text("Thank you for playing! ")
+                        .padding()
+                    
+                    Button(action: {
+                        showThankYou = false
+                        mode = .play
+                    }) {
+                        Text("Return to Play")
+                    }
+                    .padding()
+                    
+                    Button(action: {
+                        showThankYou = false
+                        mode = .teach
+                        trainedCount = 0
+                        progress = 0
+                        currentEmojiIndex = 0
+                        loadEmojis()
+                    }) {
+                        Text("Restart & Teach")
+                    }
+                    .padding()
+                }
+            }  else if mode == .teach && progress == 0 {
+                VStack {
+                    Text("Welcome. Let's play a game to understand the tradeoffs of AI, especially how it can fuel or combat the climate change crisis. You will be given emojis and a description. Draw an interpretation of the emoji to teach AI! The model will then guess what you draw.")
+                        .padding()
+                        .multilineTextAlignment(.center)
+                    
+                    Button(action: {
+                        progress = 0.01 
+                    }) {
+                        Text("Start Teaching")
+                    }
+                    .padding()
+                }
+            }  else {
                 ProgressBar(progress: progress)
                     .padding()
                 
@@ -120,7 +156,9 @@ struct ContentView: View {
             let flattenedDrawing = drawing.flatMap { $0 }
             let (prediction, confidence) = neuralNetwork.predict(input: flattenedDrawing)
             
-            if confidence > 0.5 {
+            // 0.16 would be random, 0.2 is good, testing w 0.17 tho
+            // ideally should be highest confidence but if not random ?? does it count
+            if confidence > 0.17 {
                 predictionResult = EmojiData.all.first(where: { $0.id == prediction })?.symbol ?? "??"
                 playSound(name: "recognized")
             } else {

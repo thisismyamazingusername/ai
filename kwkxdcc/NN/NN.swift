@@ -15,7 +15,9 @@ class NeuralNetwork: ObservableObject {
 
     init() {
         layers = [
-            Layer(numNeurons: 32, inputSize: 200, activationFunc: sigmoid),
+            Layer(numNeurons: 64, inputSize: 200, activationFunc: sigmoid),
+            // trying to add layer lets see if it works wo dim change
+            Layer(numNeurons: 32, inputSize: 64, activationFunc: sigmoid),
             Layer(numNeurons: 6, inputSize: 32, activationFunc: sigmoid)
         ]
     }
@@ -23,20 +25,19 @@ class NeuralNetwork: ObservableObject {
     func predict(input: [CGPoint]) -> (prediction: String, confidence: Double) {
         let flattenedInput = input.flatMap { [$0.x, $0.y] }.toDouble()
         let output = layers.reduce(flattenedInput) { $1.forward(inputs: $0) }
-        let maxValue = output.max() ?? 0
-        let maxIndex = output.firstIndex(of: maxValue) ?? 0
-        let sortedOutput = output.sorted(by: >)
-        let confidence = sortedOutput[0] - (sortedOutput.count > 1 ? sortedOutput[1] : 0)
-        print("Confidence: \(confidence)")
+        let expOutput = output.map { exp($0) }
+        let sumExp = expOutput.reduce(0, +)
+        let probabilities = expOutput.map { $0 / sumExp }
         
-        let prediction = EmojiData.all[maxIndex].id
-        print("Predicted Emoji ID: \(prediction)")
+        // printing all probabilities
+        for (index, prob) in probabilities.enumerated() {
+            print("Emoji \(EmojiData.all[index].id): \(prob)")
+        }
         
-        let result = (prediction, confidence)
-        print("Final Return Value: \(result)")
+        let maxIndex = probabilities.firstIndex(of: probabilities.max()!)!
+        let confidence = probabilities[maxIndex]
         
-        return result
-//        return (EmojiData.all[maxIndex].id, confidence)
+        return (EmojiData.all[maxIndex].id, confidence)
         
     }
 
@@ -69,7 +70,7 @@ class NeuralNetwork: ObservableObject {
 
             var error = zip(outputs, target).map { $1 - $0 }
             for layer in layers.reversed() {
-                error = layer.backward(error: error, learningRate: 0.01)
+                error = layer.backward(error: error, learningRate: 0.1)
             }
         }
     

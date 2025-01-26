@@ -13,7 +13,7 @@ class Trainer {
     private var lossFunction: ([Double], [Double]) -> Double
     private var lossFunctionDerivative: ([Double], [Double]) -> [Double]
 
-    init(learningRate: Double = 0.01,
+    init(learningRate: Double = 0.1,
          lossFunction: @escaping ([Double], [Double]) -> Double,
          lossFunctionDerivative: @escaping ([Double], [Double]) -> [Double]) {
         self.learningRate = learningRate

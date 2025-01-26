@@ -27,6 +27,7 @@ struct ContentView: View {
     @State private var predictionResult: String?
     @State private var audioPlayer: AVAudioPlayer?
     @State private var timer: Timer?
+    @State private var isProcessing: Bool = false
     
     let totalTrainingRounds = 12 // 6 emojis 2 passes
     
@@ -48,14 +49,22 @@ struct ContentView: View {
                     }
                 }
                 
+                Picker("Mode", selection: $mode) {
+                    ForEach(AppMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue.capitalized)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
+                
                 DrawingCanvasView(drawing: $drawing, currentEmojiIndex: $currentEmojiIndex, model: neuralNetwork)
                     .padding()
                     .onChange(of: drawing) { oldValue, newValue in
                         lastDrawingTime = Date()
                         if mode == .play {
                             timer?.invalidate()
-                            timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
-                                if Date().timeIntervalSince(lastDrawingTime) >= 5.0 {
+                            timer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: false) { _ in
+                                if Date().timeIntervalSince(lastDrawingTime) >= 3.5 && !drawing.isEmpty {
                                     predict()
                                 }
                             }
@@ -83,10 +92,10 @@ struct ContentView: View {
         guard let emojiID = currentEmoji?.id else { return }
 
         let flattenedDrawing = drawing.flatMap { $0 }
-        processDrawing(points: flattenedDrawing, canvasWidth: UIScreen.main.bounds.width, canvasHeight: UIScreen.main.bounds.height)
+        let processedDrawing = processDrawing(points: flattenedDrawing, canvasWidth: UIScreen.main.bounds.width, canvasHeight: UIScreen.main.bounds.height)
         
-        neuralNetwork.teach(input: flattenedDrawing, label: emojiID)
-        print("Teaching with emoji: \(emojiID)")
+        neuralNetwork.teach(input: processedDrawing, label: emojiID)
+        print("Teaching emoji: \(emojiID)")
         
         trainedCount += 1
         progress = CGFloat(trainedCount) / CGFloat(totalTrainingRounds)
@@ -103,20 +112,28 @@ struct ContentView: View {
 
 
     private func predict() {
-        let flattenedDrawing = drawing.flatMap { $0 }
-        let (prediction, confidence) = neuralNetwork.predict(input: flattenedDrawing)
-        
-        if confidence > 0.2 {
-            predictionResult = EmojiData.all.first(where: { $0.id == prediction })?.symbol ?? "🫠"
-            playSound(name: "recognized")
-        } else {
-            predictionResult = "🫠"
-            playSound(name: "missed")
-        }
+        guard !drawing.isEmpty else { return }
+        isProcessing = true
+        predictionResult = "Processing..."
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            drawing = []
-            predictionResult = nil
+            let flattenedDrawing = drawing.flatMap { $0 }
+            let (prediction, confidence) = neuralNetwork.predict(input: flattenedDrawing)
+            
+            if confidence > 0.5 {
+                predictionResult = EmojiData.all.first(where: { $0.id == prediction })?.symbol ?? "??"
+                playSound(name: "recognized")
+            } else {
+                predictionResult = "🫠 missed that"
+                playSound(name: "missed")
+            }
+            
+            isProcessing = false
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                drawing = []
+                predictionResult = nil
+            }
         }
     }
 
@@ -140,7 +157,7 @@ struct ContentView: View {
         currentEmoji = EmojiData.all[currentEmojiIndex]
     }
 
-    func processDrawing(points: [CGPoint], canvasWidth: CGFloat, canvasHeight: CGFloat) {
+    func processDrawing(points: [CGPoint], canvasWidth: CGFloat, canvasHeight: CGFloat) -> [CGPoint] {
         let grid = neuralNetwork.canvasToGrid(points: points, width: canvasWidth, height: canvasHeight)
         var inputPoints: [CGPoint] = []
         
@@ -154,6 +171,6 @@ struct ContentView: View {
             }
         }
         
-        neuralNetwork.teach(input: inputPoints, label: EmojiData.all[currentEmojiIndex].id)
+        return inputPoints
     }
 }

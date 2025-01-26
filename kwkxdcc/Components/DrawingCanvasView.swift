@@ -27,4 +27,6 @@ struct DrawingCanvasView: UIViewRepresentable {
         }
         uiView.setNeedsDisplay()
     }
+    
+    
 }

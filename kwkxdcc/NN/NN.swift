@@ -27,8 +27,17 @@ class NeuralNetwork: ObservableObject {
         let maxIndex = output.firstIndex(of: maxValue) ?? 0
         let sortedOutput = output.sorted(by: >)
         let confidence = sortedOutput[0] - (sortedOutput.count > 1 ? sortedOutput[1] : 0)
+        print("Confidence: \(confidence)")
         
-        return (EmojiData.all[maxIndex].id, confidence)
+        let prediction = EmojiData.all[maxIndex].id
+        print("Predicted Emoji ID: \(prediction)")
+        
+        let result = (prediction, confidence)
+        print("Final Return Value: \(result)")
+        
+        return result
+//        return (EmojiData.all[maxIndex].id, confidence)
+        
     }
 
 

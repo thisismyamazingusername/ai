@@ -48,7 +48,7 @@ class DrawingCanvas: UIView {
         context.setLineJoin(.round)
         context.setLineCap(.round)
         
-        for stroke in allStrokes {
+        for stroke in allStrokes + [currentStroke] {
             for (index, point) in stroke.enumerated() {
                 if index == 0 {
                     context.move(to: point)

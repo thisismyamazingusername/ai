@@ -20,12 +20,17 @@ class NeuralNetwork: ObservableObject {
         ]
     }
 
-    func predict(input: [CGPoint]) -> String {
+    func predict(input: [CGPoint]) -> (prediction: String, confidence: Double) {
         let flattenedInput = input.flatMap { [$0.x, $0.y] }.toDouble()
         let output = layers.reduce(flattenedInput) { $1.forward(inputs: $0) }
-        let maxIndex = output.firstIndex(of: output.max() ?? 0) ?? 0
-        return EmojiData.all[maxIndex].id
+        let maxValue = output.max() ?? 0
+        let maxIndex = output.firstIndex(of: maxValue) ?? 0
+        let sortedOutput = output.sorted(by: >)
+        let confidence = sortedOutput[0] - (sortedOutput.count > 1 ? sortedOutput[1] : 0)
+        
+        return (EmojiData.all[maxIndex].id, confidence)
     }
+
 
     func teach(input: [CGPoint], label: String) {
             // flattened/converted -> double??

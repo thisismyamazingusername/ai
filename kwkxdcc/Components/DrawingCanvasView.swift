@@ -16,12 +16,15 @@ struct DrawingCanvasView: UIViewRepresentable {
     func makeUIView(context: Context) -> DrawingCanvas {
         let canvas = DrawingCanvas()
         canvas.onDrawingUpdate = { points in
-            drawing = points 
+            drawing = points
         }
         return canvas
     }
     
     func updateUIView(_ uiView: DrawingCanvas, context: Context) {
+        if drawing.isEmpty {
+            uiView.clearCanvas()
+        }
         uiView.setNeedsDisplay()
     }
 }

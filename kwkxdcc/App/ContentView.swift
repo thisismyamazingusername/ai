@@ -6,6 +6,8 @@
 //
 //
 import SwiftUI
+import AVFoundation
+import Combine
 
 enum AppMode: String, CaseIterable {
     case teach
@@ -20,34 +22,52 @@ struct ContentView: View {
     @State private var neuralNetwork = NeuralNetwork()
     @State private var trainedCount: Int = 0
     @State private var drawing: [CGPoint] = []
+    @State private var showThankYou: Bool = false
+    @State private var predictionResult: String?
+    @State private var audioPlayer: AVAudioPlayer?
+    @State private var timer: Timer?
+    
+    let totalTrainingRounds = 12 // 6 emojis 2 passes
     
     var body: some View {
         VStack {
-            ProgressBar(progress: progress)
-                .padding()
-            
-            HStack {
-                Text("Mode:")
-                Picker("Mode", selection: $mode) {
-                    Text("Teach").tag(AppMode.teach)
-                    Text("Play").tag(AppMode.play)
+            if showThankYou {
+                Text("Thank you for playing!")
+            } else {
+                ProgressBar(progress: progress)
+                    .padding()
+                
+                if mode == .teach {
+                    if let emoji = currentEmoji {
+                        EmojiDisplay(emoji: emoji.symbol, description: emoji.description)
+                    }
+                } else {
+                    if let result = predictionResult {
+                        EmojiDisplay(emoji: result, description: "Prediction")
+                    }
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .disabled(trainedCount < 13)
-            }
-            
-            if let emoji = currentEmoji {
-                EmojiDisplay(emoji: emoji.symbol, description: emoji.description)
-            }
-            
-            DrawingCanvasView(drawing: $drawing, currentEmojiIndex: $currentEmojiIndex, model: neuralNetwork)
-                .padding()
-            
-            if mode == .teach {
-                Button(action: teachNext) {
-                    Text("Teach next")
+                
+                DrawingCanvasView(drawing: $drawing, currentEmojiIndex: $currentEmojiIndex, model: neuralNetwork)
+                    .padding()
+                    .onChange(of: drawing) { oldValue, newValue in
+                        if mode == .play {
+                            timer?.invalidate()
+                            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
+                                predict()
+                            }
+                        }
+                    }
+                
+                if mode == .teach {
+                    Button(action: teachNext) {
+                        Text("Teach")
+                    }
+                    .disabled(drawing.isEmpty || trainedCount >= totalTrainingRounds)
+                } else {
+                    Button(action: { showThankYou = true }) {
+                        Text("So What?")
+                    }
                 }
-                .disabled(drawing.isEmpty || trainedCount >= EmojiData.all.count)
             }
         }
         .onAppear {
@@ -64,9 +84,9 @@ struct ContentView: View {
         print("Teaching with emoji: \(emojiID)")
         
         trainedCount += 1
-        progress = CGFloat(trainedCount) / CGFloat(EmojiData.all.count)
+        progress = CGFloat(trainedCount) / CGFloat(totalTrainingRounds)
         
-        if trainedCount < EmojiData.all.count {
+        if trainedCount < totalTrainingRounds {
             nextEmoji()
         } else {
             mode = .play
@@ -74,6 +94,44 @@ struct ContentView: View {
         }
         
         drawing = []
+    }
+
+    private func predict() {
+        let (prediction, confidence) = neuralNetwork.predict(input: drawing)
+        
+        if confidence > 0.2 {
+            //   ADJUST THIS to 0.5 hmm brb
+            predictionResult = EmojiData.all.first(where: { $0.id == prediction })?.symbol ?? "🫠"
+            playSound(name: "recognized")
+        } else {
+            predictionResult = "🫠"
+            playSound(name: "missed")
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            drawing = []
+            predictionResult = nil
+        }
+    }
+
+
+    private func playSound(name: String) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "mp3") else { return }
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("Failed to play sound: \(error)")
+        }
+    }
+
+    private func loadEmojis() {
+        currentEmoji = EmojiData.all.first
+    }
+        
+    private func nextEmoji() {
+        currentEmojiIndex = (currentEmojiIndex + 1) % EmojiData.all.count
+        currentEmoji = EmojiData.all[currentEmojiIndex]
     }
 
     func processDrawing(points: [CGPoint], canvasWidth: CGFloat, canvasHeight: CGFloat) {
@@ -87,24 +145,9 @@ struct ContentView: View {
                                         y: CGFloat(rowIndex) * (canvasHeight / CGFloat(grid.count)))
                     inputPoints.append(point)
                 }
-//                else {
-//                    // add empty points w 0??
-//                    // but we're only interested in active points
-//                }
             }
         }
         
         neuralNetwork.teach(input: inputPoints, label: EmojiData.all[currentEmojiIndex].id)
-    }
-
-    private func loadEmojis() {
-        currentEmoji = EmojiData.all.first
-    }
-        
-    private func nextEmoji() {
-        if let currentIndex = EmojiData.all.firstIndex(where: { $0.id == currentEmoji?.id }) {
-            let nextIndex = (currentIndex + 1) % EmojiData.all.count
-            currentEmoji = EmojiData.all[nextIndex]
-        }
     }
 }

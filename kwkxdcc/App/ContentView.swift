@@ -29,13 +29,14 @@ struct ContentView: View {
     @State private var timer: Timer?
     @State private var isProcessing: Bool = false
     
-    let totalTrainingRounds = 12 // 6 emojis 2 passes
+//    let totalTrainingRounds = 15 // 5 emojis 3 passes
+    let totalTrainingRounds = 20
     
     var body: some View {
         VStack {
             if showThankYou {
                 VStack {
-                    Text("Thank you for playing! ")
+                    Text("Thank you for playing! Did you know you're interacting with an AI powered by a forward-feeding neural network?While it might not always be perfect, that's expected! AI models need large amounts of training data to improve. This is just one example of how AI is used for interactive education, and it's an important piece in the fight against the climate change crisis.")
                         .padding()
                     
                     Button(action: {
@@ -53,6 +54,7 @@ struct ContentView: View {
                         progress = 0
                         currentEmojiIndex = 0
                         loadEmojis()
+                        neuralNetwork = NeuralNetwork()
                     }) {
                         Text("Restart & Teach")
                     }
@@ -60,7 +62,7 @@ struct ContentView: View {
                 }
             }  else if mode == .teach && progress == 0 {
                 VStack {
-                    Text("Welcome. Let's play a game to understand the tradeoffs of AI, especially how it can fuel or combat the climate change crisis. You will be given emojis and a description. Draw an interpretation of the emoji to teach AI! The model will then guess what you draw.")
+                    Text("Welcome. Let's play a game to understand the tradeoffs of AI, especially how it can fuel or combat the climate change crisis. In teach mode, you will be given emojis and a description. Draw an interpretation of the emoji to teach AI! The model will then guess what you draw in play mode.")
                         .padding()
                         .multilineTextAlignment(.center)
                     
@@ -131,7 +133,7 @@ struct ContentView: View {
         let processedDrawing = processDrawing(points: flattenedDrawing, canvasWidth: UIScreen.main.bounds.width, canvasHeight: UIScreen.main.bounds.height)
         
         neuralNetwork.teach(input: processedDrawing, label: emojiID)
-        print("Teaching emoji: \(emojiID)")
+        print("^ Taught emoji: \(emojiID)")
         
         trainedCount += 1
         progress = CGFloat(trainedCount) / CGFloat(totalTrainingRounds)
@@ -156,8 +158,8 @@ struct ContentView: View {
             let flattenedDrawing = drawing.flatMap { $0 }
             let (prediction, confidence) = neuralNetwork.predict(input: flattenedDrawing)
             
-            // 0.16 would be random, 0.2 is good, testing w 0.17 tho
-            // ideally should be highest confidence but if not random ?? does it count
+            // 0.16 would be random, 0.2 is meh, testing w 0.17 tho
+            // ideally should be higher than 0.5
             if confidence > 0.17 {
                 predictionResult = EmojiData.all.first(where: { $0.id == prediction })?.symbol ?? "??"
                 playSound(name: "recognized")
@@ -196,14 +198,15 @@ struct ContentView: View {
     }
 
     func processDrawing(points: [CGPoint], canvasWidth: CGFloat, canvasHeight: CGFloat) -> [CGPoint] {
+        let gridSize = 16
         let grid = neuralNetwork.canvasToGrid(points: points, width: canvasWidth, height: canvasHeight)
         var inputPoints: [CGPoint] = []
         
-        for (rowIndex, row) in grid.enumerated() {
-            for (colIndex, isActive) in row.enumerated() {
-                if isActive {
-                    let point = CGPoint(x: CGFloat(colIndex) * (canvasWidth / CGFloat(grid.count)),
-                                        y: CGFloat(rowIndex) * (canvasHeight / CGFloat(grid.count)))
+        for i in 0..<gridSize {
+            for j in 0..<gridSize {
+                if grid[i][j] > 0.5 {
+                    let point = CGPoint(x: CGFloat(j) * (canvasWidth / CGFloat(gridSize)),
+                                        y: CGFloat(i) * (canvasHeight / CGFloat(gridSize)))
                     inputPoints.append(point)
                 }
             }
@@ -211,4 +214,5 @@ struct ContentView: View {
         
         return inputPoints
     }
+
 }

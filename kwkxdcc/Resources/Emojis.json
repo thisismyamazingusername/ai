@@ -1,9 +1,8 @@
 [
-    { "id": "1", "symbol": "✨💪", "description": "AI Strength" },
-    { "id": "2", "symbol": "⚡🏭⚠️💧", "description": "High Resource Demands" },
-    { "id": "3", "symbol": "💰", "description": "Private vs Public Advancements" },
-    { "id": "4", "symbol": "👌", "description": "Opportunities for Non-Technical People" },
-    { "id": "5", "symbol": "🕒♾️", "description": "Efficiency" },
-    { "id": "6", "symbol": "💻💼🔧", "description": "Jobs and Research opportunities" }
+    { "id": "1", "symbol": "🤖✨🌍❓", "description": "The AI Mystery: Often seen as the unofficial AI emoji, it’s a symbol of how AI’s true impact on climate change is still unfolding. While the future is uncertain, each of us can shape it through smart choices and green tech support!" },
+    { "id": "2", "symbol": "💧💸🏭🌍", "description": "Resource Inequity: AI-driven climate solutions can prioritize businesses over people, diverting vital resources like water for energy production, leaving vulnerable communities at risk." },
+    { "id": "3", "symbol": "🖥️🌌🔋🔥", "description": "Energy-Hungry Data Centers: Training large AI models requires massive computational resources, often powered by non-renewable energy." },
+    { "id": "4", "symbol": "🌱🤖💡📉", "description": "Optimized Efficiency: AI systems can analyze energy consumption patterns or carbon emissions for example to reduce waste and increase efficiency, promoting sustainability." },
+    { "id": "5", "symbol": "🌊🛠️🌀📉", "description": "Averting crises: AI can help design adaptive infrastructure, predict coastal erosion, and manage water resources to address the consequences of climate change." }
 ]
 

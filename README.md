@@ -1,3 +1,5 @@
-# ?ai! hero or villain in climate sustainability :0
+herovillAIn: iOS App to explore AI’s environmental impact<br> 
+- Built feedforward NN in Swift to gamify ML concepts, implemented ReLU, Softmax, L2 regularization, and learning rate decay<br>
+- Deloitte Foundation $5,000 scholarship-winning project.<br>
 
-[Demo Video](https://youtu.be/eUmXoVeHz9M) and [Deloitte Challenge Presentation](https://docs.google.com/presentation/d/1a1B4XYLf3ejo3EYXhLuMPE1ibF2TqGzaEih8BrrFQGM/edit?usp=sharing)  
+[Demo](https://youtu.be/eUmXoVeHz9M)
